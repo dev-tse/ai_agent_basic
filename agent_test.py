@@ -36,14 +36,18 @@ tools = [
         }
     }
 ]
+
 messages = [{"role": "user", "content":"Какая погода в Алматы?"}]
-response = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
-    messages=messages,
-    tools=tools
-)
-message = response.choices[0].message
-if (message.tool_calls):
+def get_model_answer():
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages,
+        tools=tools
+    )
+    return response.choices[0].message
+
+message = get_model_answer()
+while message.tool_calls:
     func_name = message.tool_calls[0].function.name
     func_argument = json.loads(message.tool_calls[0].function.arguments)
     real_func = available_functions[func_name]
@@ -52,10 +56,5 @@ if (message.tool_calls):
     message_user = {"role": "tool", "content": result, "tool_call_id": message.tool_calls[0].id}
     messages.append(message)
     messages.append(message_user)
-    new_response = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
-    messages=messages,
-    tools=tools
-    )
-    new_message = new_response.choices[0].message
-    print(new_message)
+    message = get_model_answer()
+    print(message)
